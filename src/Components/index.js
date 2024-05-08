@@ -8,16 +8,16 @@ if (cropType == "Rice" || cropType == "rice") {
   cropFactor = 1.1;
 }
 if (cropType == "Wheat" || cropType == "wheat") {
-  cropFactor = 1.09;
+  cropFactor = 0.51;
 }
 let actualEvapotranspiration = [];
-let waterRequired = [];``
+let waterRequired = [];
 let netIrrigationDemand = [];
 for(var i=0;i<8;i++){
   actualEvapotranspiration[i] = evapoTranspiration[i] * cropFactor;
   waterRequired[i] = actualEvapotranspiration[i] - precipitaion[i];
   if(soilMoisture[i] < soilMoistureThreshold){
-    waterRequired[i] += soilMoistureThreshold-soilMoisture[i];
+    waterRequired[i] += (soilMoistureThreshold-soilMoisture[i])*evapoTranspiration[i]*k/100;
   }
   netIrrigationDemand[i] = max(0,waterRequired);
 }
