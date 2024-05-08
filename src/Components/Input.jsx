@@ -6,15 +6,12 @@ import Chart from 'chart.js/auto';
 const Input = () => {
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
-  const [precipitation, setPrecipitation] = useState([]);
-  const [soilMoisture, setSoilMoisture] = useState([]);
-  const [evapoTranspiration, setevapoTranspiration] = useState([]);
-  const [netIrrigationDemand, setnetIrrigationDemand] = useState([]);
-
   const [Data, setData] = useState();
   const [Data2, setData2] = useState();
   const [Data3, setData3] = useState();
-
+  const [precipitation, setPrecipitation] = useState([]);
+  const [soilMoisture, setSoilMoisture] = useState([]);
+  const [evapoTranspiration, setevapoTranspiration] = useState([]);
   useEffect(() => {
     // Fetching user's location using the window object
     if (navigator.geolocation) {
@@ -40,56 +37,55 @@ const Input = () => {
 
     const soilMoisture = [];
     const evapoTranspiration = [];
-    const precipitaion = [];
+    const precipitation2 = [];
 
     for (let index = 0; index < data.length; index++) {
       const obj = data[index];
       soilMoisture.push(obj["v_soilm_100_200cm"]);
       evapoTranspiration.push(obj["evapotranspiration"]);
-      precipitaion.push(obj["precip"]);
+      precipitation2.push(obj["precip"]);
     }
-
-    const soilMoistureThreshold = 0.45;
-    let cropType = "Wheat";
-    let cropFactor;
-    if (cropType === "Rice" || cropType === "rice") {
-      cropFactor = 1.1;
+    setPrecipitation(...precipitation2)
+    const fieldCapacity = 366.67
+    const wiltingPoint = 216.67
+    const maxStorage = 50;
+    const minStorage = 0.25*50;
+    const storage = [];
+    storage[0] = maxStorage;
+    const irrigationdemand=[];
+    irrigationdemand[0] = maxStorage;
+    const cropFactor=1.2;
+    const avgEvapotranspiration=0;
+    for(var i=0;i<=7;i++){
+      avgEvapotranspiration+=evapoTranspiration[i];
     }
-    if (cropType === "Wheat" || cropType === "wheat") {
-      cropFactor = 1.29;
-    }
-    let actualEvapotranspiration = [];
-    let waterRequired = [];
-    let netIrrigationDemand = [];
-    for (var i = 0; i < 9; i++) {
-      actualEvapotranspiration[i] = evapoTranspiration[i] * cropFactor;
-      waterRequired[i] = actualEvapotranspiration[i] - precipitaion[i];
-      if (soilMoisture[i] < soilMoistureThreshold) {
-        waterRequired[i] +=
-          (soilMoistureThreshold - soilMoisture[i]) *
-          actualEvapotranspiration[i];
+    avgEvapotranspiration=avgEvapotranspiration/8;
+    // const avgEvapotranspiration=
+    for(var i=1;i<=7;i++){
+      storage[i]=Math.min(maxStorage,storage[i-1]+0.8*precipitation2[i-1]-cropFactor*evapoTranspiration[i-1]);
+      if((storage[i]-minStorage)<avgEvapotranspiration){
+        irrigationdemand[i]=maxStorage-storage[i];
+        storage[i]=maxStorage;
       }
-      netIrrigationDemand[i] = waterRequired[i] < 0 ? 0 : waterRequired[i];
+      else{
+        irrigationdemand[i]=0;
+      }
     }
-    console.log(netIrrigationDemand);
-
-    // Set precipitation data in state
-    setPrecipitation(precipitaion);
-    setevapoTranspiration(evapoTranspiration);
-    setSoilMoisture(soilMoisture);
-    setnetIrrigationDemand(netIrrigationDemand);
-
+    console.log(precipitation2);
+    console.log(evapoTranspiration);
+    console.log(storage);
+    console.log(irrigationdemand);
     setData({
-      labels: ["Day0","Day1","Day2","Day3","Day4","Day5","Day6","Day7","Day8"],
+      labels: ["Day0", "Day1", "Day2", "Day3", "Day4", "Day5", "Day6", "Day7", "Day8"],
       datasets: [
         {
-          label: "precipitation (mm)",
-          data: precipitaion.map((data) => data),
+          label: "storage (mm)",
+          data: storage.map((data) => data),
         },
       ],
     })
     setData2({
-      labels: ["Day0","Day1","Day2","Day3","Day4","Day5","Day6","Day7","Day8"],
+      labels: ["Day0", "Day1", "Day2", "Day3", "Day4", "Day5", "Day6", "Day7", "Day8"],
       datasets: [
         {
           label: "soil Moisture (mm)",
@@ -98,7 +94,7 @@ const Input = () => {
       ],
     })
     setData3({
-      labels: ["Day0","Day1","Day2","Day3","Day4","Day5","Day6","Day7","Day8"],
+      labels: ["Day0", "Day1", "Day2", "Day3", "Day4", "Day5", "Day6", "Day7", "Day8"],
       datasets: [
         {
           label: "evapoTranspiration (mm)",
@@ -187,9 +183,9 @@ const Input = () => {
       </table>
       {precipitation.length > 0 && (
         <div style={{ width: 700 }} className="bg-white flex flex-col gap-4">
-          <Line className="w-1/3"  data={Data} />
-          <Line className="w-1/3"  data={Data2} /> 
-          <Line className="w-1/3"  data={Data3} />
+          <Line className="w-1/3" data={Data} />
+          <Line className="w-1/3" data={Data2} />
+          <Line className="w-1/3" data={Data3} />
         </div>
       )}
     </div>
